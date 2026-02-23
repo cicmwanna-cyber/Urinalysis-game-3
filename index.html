@@ -3,239 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urinalysis Blitz 🩺</title>
+    <title>Urinalysis Master Quiz</title>
     <style>
-        :root {
-            --urine-yellow: #ffeb3b;
-            --amber: #ffc107;
-            --med-blue: #2196f3;
-            --dark-blue: #1565c0;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        #game-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 90%;
-            max-width: 500px;
-            text-align: center;
-            border-top: 8px solid var(--amber);
-        }
-
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f8ff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #game-container { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 400px; text-align: center; position: relative; }
         .hidden { display: none; }
-
-        h1 { color: var(--dark-blue); margin-bottom: 0.5rem; }
-        
-        #timer-bar {
-            width: 100%;
-            height: 10px;
-            background: #eee;
-            border-radius: 5px;
-            margin: 20px 0;
-            overflow: hidden;
-        }
-
-        #timer-fill {
-            height: 100%;
-            background: var(--amber);
-            width: 100%;
-            transition: width 1s linear;
-        }
-
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 2px solid var(--med-blue);
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-
-        .btn:hover {
-            background: var(--med-blue);
-            color: white;
-        }
-
-        #score-display { font-weight: bold; font-size: 1.2rem; color: #4caf50; }
-        
-        input {
-            padding: 10px;
-            width: 80%;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+        .urine-sample { width: 100px; height: 150px; margin: 20px auto; border: 5px solid #ddd; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; border-top: none; position: relative; }
+        .liquid { position: absolute; bottom: 0; width: 100%; height: 80%; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px; transition: background 0.5s; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: transform 0.1s; }
+        button:active { transform: scale(0.95); }
+        #timer { font-size: 24px; font-weight: bold; color: #e74c3c; }
+        #score-display { font-size: 18px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="start-screen">
-        <h1>Urinalysis Blitz 🩺</h1>
-        <p>Identify the findings before the lab closes!</p>
-        <input type="text" id="player-name" placeholder="Enter Lab Tech Name">
-        <button class="btn" onclick="startGame()" style="background: var(--med-blue); color: white;">START SHIFT</button>
+    <div id="home-screen">
+        <h1>Urinalysis Master</h1>
+        <input type="text" id="player-name" placeholder="Enter Your Name" style="padding: 10px; width: 80%; margin-bottom: 20px;"><br>
+        <button onclick="startGame()">START GAME</button>
     </div>
 
     <div id="quiz-screen" class="hidden">
-        <div style="display: flex; justify-content: space-between;">
-            <span id="q-count">Question 1/4</span>
-            <span id="current-score">Score: 0</span>
+        <div id="score-display">Score: <span id="current-score">0</span>/10</div>
+        <div id="timer">10</div>
+        <div class="urine-sample">
+            <div id="urine-color" class="liquid"></div>
         </div>
-        <div id="timer-bar"><div id="timer-fill"></div></div>
-        <h2 id="question-text">Question goes here?</h2>
-        <div id="options-container"></div>
+        <h3 id="question-text">What does this color indicate?</h3>
+        <div id="options"></div>
+        <hr>
+        <button onclick="goHome()" style="background: #666;">Home</button>
     </div>
 
     <div id="result-screen" class="hidden">
-        <h1>Lab Report Complete!</h1>
+        <h2>Game Over!</h2>
         <p id="final-stats"></p>
-        <h3>High Scores:</h3>
-        <ul id="high-score-list" style="list-style: none; padding: 0;"></ul>
-        <button class="btn" onclick="location.reload()">RESTART</button>
+        <button onclick="saveToFile()">Save Results (Download)</button>
+        <button onclick="goHome()" style="background: #2196F3;">Play Again</button>
     </div>
 </div>
 
+<audio id="sound-correct" src="https://actions.google.com/sounds/v1/cartoon/clinker_win.ogg"></audio>
+<audio id="sound-wrong" src="https://actions.google.com/sounds/v1/emergency/beeps.ogg"></audio>
+
 <script>
     const questions = [
-        { q: "Which crystal looks like a 'coffin lid'?", a: "Triple Phosphate", options: ["Uric Acid", "Triple Phosphate", "Calcium Oxalate", "Cystine"] },
-        { q: "A 'mousy' odor in infant urine suggests...", a: "PKU", options: ["Diabetes", "PKU", "UTI", "MSUD"] },
-        { q: "Specific Gravity of 1.000 is usually...", a: "Impossible/Water", options: ["Normal", "Dehydration", "Impossible/Water", "Concentrated"] },
-        { q: "Refractive index is used to measure:", a: "Specific Gravity", options: ["pH", "Glucose", "Specific Gravity", "Bilirubin"] }
+        { color: "#FFFFE0", ans: "Hydrated", opts: ["Hydrated", "Dehydrated", "Blood"] },
+        { color: "#FFD700", ans: "Normal", opts: ["Normal", "Liver Issues", "Excess B-Vitamins"] },
+        { color: "#8B4513", ans: "Severe Dehydration", opts: ["Normal", "Severe Dehydration", "Diabetes"] },
+        { color: "#FF4500", ans: "Blood/Rifampin", opts: ["Blood/Rifampin", "Hydrated", "Healthy"] },
+        { color: "#0000FF", ans: "Methylene Blue", opts: ["Healthy", "Methylene Blue", "Dehydrated"] },
+        { color: "#FFFF00", ans: "B Vitamins", opts: ["B Vitamins", "Blood", "Liver failure"] },
+        { color: "#7CFC00", ans: "Asparagus/Bacteria", opts: ["Asparagus/Bacteria", "Normal", "Dehydrated"] },
+        { color: "#FFFFFF", ans: "Chyluria", opts: ["Chyluria", "Normal", "Healthy"] },
+        { color: "#000000", ans: "Alkaptonuria", opts: ["Alkaptonuria", "Hydrated", "High Sugar"] },
+        { color: "#FFC0CB", ans: "Beets/Berries", opts: ["Normal", "Beets/Berries", "Liver Issue"] }
     ];
 
     let currentQ = 0;
     let score = 0;
     let timeLeft = 10;
-    let timer;
+    let timerInterval;
     let playerName = "";
 
-    // Sound effects using Audio Synthesis (No external files needed!)
-    function playSound(type) {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        if (type === 'correct') {
-            osc.frequency.setValueAtTime(500, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.1);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-        } else {
-            osc.frequency.setValueAtTime(200, ctx.currentTime);
-            osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.3);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        }
-        
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
-    }
-
     function startGame() {
-        playerName = document.getElementById('player-name').value || "Guest Tech";
-        document.getElementById('start-screen').classList.add('hidden');
+        playerName = document.getElementById('player-name').value || "Anonymous";
+        document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
-        showQuestion();
-    }
-
-    function showQuestion() {
-        if (currentQ >= questions.length) return endBatch();
-        
-        const qData = questions[currentQ];
-        document.getElementById('q-count').innerText = `Question ${currentQ + 1}/${questions.length}`;
-        document.getElementById('question-text').innerText = qData.q;
-        
-        const container = document.getElementById('options-container');
-        container.innerHTML = '';
-        
-        qData.options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.innerText = opt;
-            btn.onclick = () => checkAnswer(opt);
-            container.appendChild(btn);
-        });
-
-        startTimer();
-    }
-
-    function startTimer() {
-        timeLeft = 10;
-        updateTimerBar();
-        clearInterval(timer);
-        timer = setInterval(() => {
-            timeLeft--;
-            updateTimerBar();
-            if (timeLeft <= 0) {
-                playSound('wrong');
-                nextQuestion();
-            }
-        }, 1000);
-    }
-
-    function updateTimerBar() {
-        const fill = document.getElementById('timer-fill');
-        fill.style.width = (timeLeft * 10) + "%";
-        fill.style.backgroundColor = timeLeft < 4 ? "#f44336" : "#ffc107";
-    }
-
-    function checkAnswer(choice) {
-        clearInterval(timer);
-        if (choice === questions[currentQ].a) {
-            score += (timeLeft * 10) + 50;
-            playSound('correct');
-        } else {
-            playSound('wrong');
-        }
-        document.getElementById('current-score').innerText = `Score: ${score}`;
+        currentQ = 0;
+        score = 0;
         nextQuestion();
     }
 
     function nextQuestion() {
-        currentQ++;
-        if (currentQ < questions.length) {
-            showQuestion();
-        } else {
-            endBatch();
-        }
+        if (currentQ >= 10) return endGame();
+        
+        clearInterval(timerInterval);
+        timeLeft = 10;
+        document.getElementById('timer').innerText = timeLeft;
+        
+        const q = questions[currentQ];
+        document.getElementById('urine-color').style.backgroundColor = q.color;
+        document.getElementById('current-score').innerText = score;
+        
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+        q.opts.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(opt);
+            optionsDiv.appendChild(btn);
+        });
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+            if (timeLeft <= 0) checkAnswer(null);
+        }, 1000);
     }
 
-    function endBatch() {
+    function checkAnswer(choice) {
+        clearInterval(timerInterval);
+        const correct = questions[currentQ].ans;
+        
+        if (choice === correct) {
+            score++;
+            document.getElementById('sound-correct').play();
+        } else {
+            document.getElementById('sound-wrong').play();
+        }
+        
+        currentQ++;
+        setTimeout(nextQuestion, 500);
+    }
+
+    function endGame() {
         document.getElementById('quiz-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
-        document.getElementById('final-stats').innerText = `${playerName}, you scored ${score} points!`;
-        
-        saveScore(playerName, score);
-        displayHighScores();
+        document.getElementById('final-stats').innerText = `${playerName}, your final score is ${score}/10`;
     }
 
-    function saveScore(name, score) {
-        let scores = JSON.parse(localStorage.getItem('urineScores') || '[]');
-        scores.push({name, score});
-        scores.sort((a, b) => b.score - a.score);
-        localStorage.setItem('urineScores', JSON.stringify(scores.slice(0, 5)));
+    function goHome() {
+        clearInterval(timerInterval);
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('home-screen').classList.remove('hidden');
     }
 
-    function displayHighScores() {
-        const list = document.getElementById('high-score-list');
-        const scores = JSON.parse(localStorage.getItem('urineScores') || '[]');
-        list.innerHTML = scores.map(s => `<li>${s.name}: ${s.score}</li>`).join('');
+    function saveToFile() {
+        const text = `Player: ${playerName}\nScore: ${score}/10\nDate: ${new Date().toLocaleString()}`;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const anchor = document.createElement('a');
+        anchor.download = `${playerName}_score.txt`;
+        anchor.href = window.URL.createObjectURL(blob);
+        anchor.click();
+        alert("Score saved! You can now upload this file to your Google Drive.");
     }
 </script>
 
