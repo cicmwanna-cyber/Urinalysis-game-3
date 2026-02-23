@@ -32,18 +32,27 @@
     
     .progress-fill { transition: width 0.5s ease-in-out; }
   </style>
-  <style>body { box-sizing: border-box; }</style>
  </head>
  <body>
   <div id="app" class="w-full max-w-xl p-4 h-full">
    <div id="home-screen" class="text-center h-full flex flex-col items-center justify-center">
-    <div class="text-7xl mb-6">
-     🧪
-    </div>
+    <div class="text-7xl mb-6">🧪</div>
     <h1 id="game-title" class="text-5xl font-bold text-amber-400 mb-4">Urinalysis Blitz</h1>
+    
+    <div id="global-stats" class="mb-6 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 inline-flex items-center gap-3">
+        <span class="text-slate-400 text-sm font-medium uppercase tracking-wider">Global Avg:</span>
+        <span id="avg-score-display" class="text-amber-400 font-bold">--</span>
+    </div>
+
     <p class="text-slate-400 mb-8 text-lg">Analyze 10 specimens. You have 10s per case.<br>
-     Fast answers earn <span class="text-amber-400 font-bold">2x Blitz Combos!</span></p><input type="text" id="player-name" placeholder="Enter your name..." class="w-full max-w-xs px-4 py-3 rounded-xl bg-slate-700 border-2 border-slate-600 text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none mb-4"> <button id="start-btn" onclick="startGame()" class="px-12 py-5 bg-amber-500 hover:bg-amber-400 text-indigo-950 font-bold text-2xl rounded-2xl shadow-2xl transform hover:scale-105 transition-all"> START SHIFT </button> <button onclick="showScoreboard()" class="mt-6 px-8 py-3 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold rounded-xl transition-all"> 🏆 Leaderboard </button>
+      Fast answers earn <span class="text-amber-400 font-bold">2x Blitz Combos!</span></p>
+    
+    <input type="text" id="player-name" maxlength="15" placeholder="Enter your name..." class="w-full max-w-xs px-4 py-3 rounded-xl bg-slate-700 border-2 border-slate-600 text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none mb-4"> 
+    
+    <button id="start-btn" onclick="startGame()" class="px-12 py-5 bg-amber-500 hover:bg-amber-400 text-indigo-950 font-bold text-2xl rounded-2xl shadow-2xl transform hover:scale-105 transition-all"> START SHIFT </button> 
+    <button onclick="showScoreboard()" class="mt-6 px-8 py-3 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold rounded-xl transition-all"> 🏆 Leaderboard </button>
    </div>
+
    <div id="game-screen" class="hidden h-full flex flex-col">
     <div class="w-full bg-slate-800 h-2 rounded-full mb-6 overflow-hidden border border-slate-700">
      <div id="progress-bar" class="progress-fill h-full bg-amber-500 w-0"></div>
@@ -70,6 +79,7 @@
      <div id="feedback" class="mt-6 text-center text-xl font-bold h-10"></div>
     </div>
    </div>
+
    <div id="gameover-screen" class="hidden h-full flex flex-col items-center justify-center text-center">
     <h2 class="text-5xl font-bold text-amber-400 mb-4">Shift Complete!</h2>
     <div class="bg-slate-800 p-8 rounded-3xl mb-8 border border-slate-700 shadow-xl">
@@ -77,27 +87,27 @@
      <p class="text-7xl font-black text-white" id="final-score">0</p>
     </div>
     <p id="player-result" class="text-slate-400 mb-6 text-lg"></p>
-    <div class="flex gap-4"><button onclick="startGame()" class="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl rounded-2xl shadow-xl transition-all hover:scale-105"> NEW ROTATION </button> <button onclick="goHome()" class="px-10 py-4 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold rounded-2xl transition-all"> HOME </button>
+    <div class="flex gap-4">
+        <button onclick="startGame()" class="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl rounded-2xl shadow-xl transition-all hover:scale-105"> NEW ROTATION </button> 
+        <button onclick="goHome()" class="px-10 py-4 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold rounded-2xl transition-all"> HOME </button>
     </div>
    </div>
+
    <div id="scoreboard-screen" class="hidden h-full flex flex-col">
     <div class="flex justify-between items-center mb-6">
-     <h2 class="text-3xl font-bold text-amber-400">🏆 Leaderboard</h2><button onclick="goHome()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"> Home </button>
+     <h2 class="text-3xl font-bold text-amber-400">🏆 Leaderboard</h2>
+     <button onclick="goHome()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"> Home </button>
     </div>
     <div id="scoreboard-list" class="flex-1 overflow-auto bg-slate-800/50 rounded-2xl p-4 border border-slate-700">
-     <p class="text-slate-400 text-center py-8">No scores yet...</p>
+     <p class="text-slate-400 text-center py-8">Loading scores...</p>
     </div>
    </div>
   </div>
-  <script>
-    // Default config
-    const defaultConfig = {
-      game_title: 'Urinalysis Blitz',
-      start_button_text: 'START SHIFT'
-    };
 
-    // Audio engine
+  <script>
+    const defaultConfig = { game_title: 'Urinalysis Blitz', start_button_text: 'START SHIFT' };
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
     const sounds = {
       tick: (t) => {
         const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
@@ -124,7 +134,6 @@
       }
     };
 
-    // Questions
     const questionBank = [
       { color: '#fef9c3', question: 'Pale yellow/straw color indicates?', options: ['Normal hydration', 'Dehydration', 'Blood in urine', 'Liver disease'], correct: 0 },
       { color: '#fbbf24', question: 'This dark yellow/amber color suggests:', options: ['Normal hydration', 'Concentrated urine/Dehydration', 'Infection', 'Kidney failure'], correct: 1 },
@@ -138,48 +147,42 @@
       { color: '#e9d5ff', question: 'Persistent foamy urine often indicates:', options: ['Proteinuria (Kidney issues)', 'Good hydration', 'Vitamin deficiency', 'Low BP'], correct: 0 }
     ];
 
-    // Game state
-    let currentScore = 0, timeLeft = 10, currentQuestion = 0, timerInterval = null, questions = [], playerName = '', scores = [];
+    let currentScore = 0, timeLeft = 10, currentQuestion = 0, timerInterval = null, questions = [], playerName = '', scores = [], isSaving = false;
 
-    // Initialize SDKs
     async function initApp() {
       if (window.elementSdk) {
         window.elementSdk.init({
           defaultConfig,
-          onConfigChange: async (config) => {
-            const titleEl = document.getElementById('game-title');
-            const startBtn = document.getElementById('start-btn');
-            if (titleEl) titleEl.textContent = config.game_title || defaultConfig.game_title;
-            if (startBtn) startBtn.textContent = config.start_button_text || defaultConfig.start_button_text;
-          },
-          mapToCapabilities: (config) => ({
-            recolorables: [],
-            borderables: [],
-            fontEditable: undefined,
-            fontSizeable: undefined
-          }),
-          mapToEditPanelValues: (config) => new Map([
-            ['game_title', config.game_title || defaultConfig.game_title],
-            ['start_button_text', config.start_button_text || defaultConfig.start_button_text]
-          ])
+          onConfigChange: (config) => {
+            document.getElementById('game-title').textContent = config.game_title || defaultConfig.game_title;
+            document.getElementById('start-btn').textContent = config.start_button_text || defaultConfig.start_button_text;
+          }
         });
       }
-
       if (window.dataSdk) {
-        const result = await window.dataSdk.init({
+        await window.dataSdk.init({
           onDataChanged: (data) => {
-            scores = data.sort((a, b) => b.score - a.score);
+            scores = data;
+            updateGlobalAvg(); // Recalculate average whenever data changes
             renderScoreboard();
           }
         });
-        if (!result.isOk) console.error('Data SDK init failed');
       }
     }
 
+    function updateGlobalAvg() {
+        const display = document.getElementById('avg-score-display');
+        if (!scores || scores.length === 0) {
+            display.textContent = "0";
+            return;
+        }
+        const sum = scores.reduce((acc, curr) => acc + (curr.score || 0), 0);
+        const avg = Math.round(sum / scores.length);
+        display.textContent = avg;
+    }
+
     function showScreen(screenId) {
-      ['home-screen', 'game-screen', 'gameover-screen', 'scoreboard-screen'].forEach(id => {
-        document.getElementById(id).classList.add('hidden');
-      });
+      ['home-screen', 'game-screen', 'gameover-screen', 'scoreboard-screen'].forEach(id => document.getElementById(id).classList.add('hidden'));
       document.getElementById(screenId).classList.remove('hidden');
     }
 
@@ -189,6 +192,7 @@
     }
 
     function showScoreboard() {
+      renderScoreboard();
       showScreen('scoreboard-screen');
     }
 
@@ -196,33 +200,26 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       playerName = document.getElementById('player-name').value.trim() || 'Intern';
       currentScore = 0;
-      timeLeft = 10;
       currentQuestion = 0;
-      
+      isSaving = false;
       questions = [...questionBank].sort(() => Math.random() - 0.5).slice(0, 10);
       document.getElementById('score').textContent = '0';
-      document.getElementById('timer').textContent = '10';
-      
       showScreen('game-screen');
       loadQuestion();
     }
 
     function loadQuestion() {
       if (currentQuestion >= 10) return endGame();
-      
       timeLeft = 10;
       updateTimerUI();
       document.getElementById('progress-bar').style.width = (currentQuestion * 10) + '%';
       startTimer();
-
       const q = questions[currentQuestion];
       document.getElementById('sample-tube').style.setProperty('--sample-color', q.color);
       document.getElementById('question').textContent = q.question;
       document.getElementById('question-num').textContent = currentQuestion + 1;
       document.getElementById('feedback').textContent = '';
-      
-      const optionsEl = document.getElementById('options');
-      optionsEl.innerHTML = q.options.map((opt, idx) => `
+      document.getElementById('options').innerHTML = q.options.map((opt, idx) => `
         <button onclick="checkAnswer(${idx})" class="option-btn p-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl border border-slate-600 text-left transition-all hover:border-amber-500 font-medium">
           ${String.fromCharCode(65 + idx)}. ${opt}
         </button>
@@ -257,18 +254,14 @@
       const q = questions[currentQuestion];
       const isCorrect = selected === q.correct;
       const isCombo = timeLeft >= 7;
-      
       const btns = document.querySelectorAll('.option-btn');
       btns.forEach(b => b.disabled = true);
 
       if (isCorrect) {
-        let points = isCombo ? 20 : 10;
-        currentScore += points;
+        currentScore += (isCombo ? 20 : 10);
         document.getElementById('score').textContent = currentScore;
         sounds.success(isCombo);
-        document.getElementById('feedback').innerHTML = isCombo 
-          ? '<span class="combo-bounce block text-2xl">⚡ BLITZ COMBO +20</span>' 
-          : '<span class="text-emerald-400">CORRECT ANALYSIS +10</span>';
+        document.getElementById('feedback').innerHTML = isCombo ? '<span class="combo-bounce block text-2xl">⚡ BLITZ COMBO +20</span>' : '<span class="text-emerald-400">CORRECT ANALYSIS +10</span>';
         btns[selected].classList.add('bg-emerald-600', 'border-emerald-400');
       } else {
         sounds.error();
@@ -289,52 +282,47 @@
     }
 
     async function endGame() {
+      if (isSaving) return;
+      isSaving = true;
+      
       document.getElementById('progress-bar').style.width = '100%';
-      document.getElementById('game-screen').classList.add('hidden');
-      document.getElementById('gameover-screen').classList.remove('hidden');
       document.getElementById('final-score').textContent = currentScore;
-      document.getElementById('player-result').textContent = `Great job, ${playerName}! You scored ${currentScore} points.`;
+      document.getElementById('player-result').textContent = `Great job, ${playerName}! Your shift is complete.`;
+      showScreen('gameover-screen');
 
-      if (window.dataSdk && scores.length < 999) {
-        const result = await window.dataSdk.create({
+      if (window.dataSdk) {
+        await window.dataSdk.create({
           player_name: playerName,
           score: currentScore,
           played_at: new Date().toISOString()
         });
-        if (!result.isOk) console.error('Failed to save score');
       }
     }
 
     function renderScoreboard() {
       const listEl = document.getElementById('scoreboard-list');
-      
-      if (scores.length === 0) {
+      if (!scores || scores.length === 0) {
         listEl.innerHTML = '<p class="text-slate-400 text-center py-8">No scores yet. Be the first to play!</p>';
         return;
       }
+      
+      const sortedScores = [...scores].sort((a, b) => b.score - a.score);
 
-      listEl.innerHTML = scores.slice(0, 20).map((s, idx) => {
-        const medals = ['🥇', '🥈', '🥉'];
-        const medal = idx < 3 ? medals[idx] : `#${idx + 1}`;
-        const date = new Date(s.played_at).toLocaleDateString();
-        
+      listEl.innerHTML = sortedScores.slice(0, 10).map((s, idx) => {
+        const medal = idx < 3 ? ['🥇', '🥈', '🥉'][idx] : `#${idx + 1}`;
         return `
           <div class="flex items-center justify-between p-3 rounded-xl mb-2 ${idx < 3 ? 'bg-amber-500/20 border border-amber-500/30' : 'bg-slate-700/50'}">
             <div class="flex items-center gap-3">
               <span class="text-2xl w-10 text-center">${medal}</span>
               <span class="text-white font-medium">${s.player_name}</span>
             </div>
-            <div class="flex items-center gap-4">
-              <span class="text-slate-400 text-sm">${date}</span>
-              <span class="text-amber-400 font-bold">${s.score}</span>
-            </div>
+            <span class="text-amber-400 font-bold">${s.score}</span>
           </div>
         `;
       }).join('');
     }
 
-    // Start
     initApp();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d242034e61245b2',t:'MTc3MTgyMjQ3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ </body>
 </html>
