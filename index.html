@@ -3,279 +3,209 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Urinalysis Blitz | Lab Diagnostic Sim</title>
+  <title>Urinalysis Blitz | High-Stakes Lab</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
     * { font-family: 'Fredoka', sans-serif; transition: all 0.2s ease; }
-    body { background: #0f172a; color: #e2e8f0; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+    body { background: #020617; color: #e2e8f0; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
     
     .sample-tube {
       background: linear-gradient(180deg, rgba(255,255,255,0.1) 20%, var(--sample-color) 20%);
       border-radius: 0 0 25px 25px;
       position: relative; overflow: hidden; border: 4px solid rgba(255,255,255,0.4);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 0 20px var(--sample-color);
     }
-    .sample-tube::after {
-      content: ""; position: absolute; top: 15%; left: -50%; width: 200%; height: 10%;
-      background: rgba(255,255,255,0.15); border-radius: 40%; animation: wave 3s infinite linear;
-    }
-    @keyframes wave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     
-    .shake-animation { animation: shake 0.3s ease-in-out; }
-    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    .shake-animation { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     
-    .progress-fill { transition: width 0.5s ease-in-out; }
-    .combo-bounce { animation: bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    @keyframes bounce { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    
-    canvas { width: 100%; height: 60px; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.3)); opacity: 0.8; }
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    .multiplier-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1.2); opacity: 1; } }
+
+    .pulse-red { animation: pulseRed 0.5s infinite alternate; }
+    @keyframes pulseRed { from { color: #fbbf24; } to { color: #ef4444; transform: scale(1.1); } }
   </style>
  </head>
  <body>
-  <div id="app" class="w-full max-w-xl p-4 h-full">
+  <div id="app" class="w-full max-w-md p-4 h-full flex flex-col">
    
-   <div id="home-screen" class="text-center h-full flex flex-col items-center justify-center">
-    <div class="text-7xl mb-4 animate-bounce">🧪</div>
-    <h1 class="text-5xl font-bold text-amber-400 mb-2">Urinalysis Blitz</h1>
-    <p class="text-slate-400 mb-6 text-sm uppercase tracking-[0.2em]">Diagnostic Proficiency Test</p>
+   <div id="home-screen" class="text-center flex-1 flex flex-col justify-center">
+    <div class="text-6xl mb-4">☣️</div>
+    <h1 class="text-4xl font-black text-amber-500 mb-6 italic">URINALYSIS BLITZ</h1>
     
-    <input type="text" id="player-name" maxlength="15" placeholder="Enter Analyst ID/Name..." class="w-full max-w-xs px-4 py-4 rounded-2xl bg-slate-800 border-2 border-slate-700 text-white focus:border-amber-400 focus:outline-none mb-4 text-center text-lg shadow-inner"> 
+    <input type="text" id="player-name" maxlength="12" placeholder="ANALYST NAME..." class="w-full px-4 py-4 rounded-xl bg-slate-900 border-2 border-slate-700 text-white focus:border-amber-500 focus:outline-none mb-4 text-center font-bold"> 
     
-    <button onclick="startGame()" class="px-10 py-5 bg-amber-500 hover:bg-amber-400 text-indigo-950 font-bold text-2xl rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)] transform hover:scale-105 active:scale-95 transition-all w-full max-w-xs uppercase mb-8"> Start Shift </button> 
+    <button onclick="startGame()" class="w-full py-5 bg-amber-500 text-slate-950 font-black text-2xl rounded-xl uppercase shadow-lg hover:bg-amber-400 transition-all mb-8"> Start Shift </button> 
 
-    <div class="w-full max-w-xs bg-slate-800/40 rounded-3xl p-5 border border-slate-700/50 backdrop-blur-sm">
-        <h3 class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-4 flex items-center justify-center gap-2">
-            <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span> Recent Lab Records
-        </h3>
-        <div id="history-list" class="max-h-48 overflow-y-auto custom-scrollbar space-y-2 pr-1">
-            <p class="text-slate-600 text-sm italic py-4 text-center">Awaiting initial data sync...</p>
+    <div class="bg-slate-900/80 rounded-2xl p-4 border border-slate-800">
+        <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">🏆 Top Analysts</h3>
+        <div id="player-list" class="space-y-2 text-sm max-h-48 overflow-y-auto pr-2"></div>
+    </div>
+   </div>
+
+   <div id="game-screen" class="hidden h-full flex flex-col py-4">
+    <div class="flex justify-between items-center mb-6">
+        <div class="bg-slate-900 px-4 py-2 rounded-lg border border-slate-800 relative">
+            <span id="multiplier-tag" class="absolute -top-3 -right-3 bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-1 rounded-full hidden">X2</span>
+            <span class="text-[10px] text-slate-500 block font-bold">SCORE</span>
+            <span id="score" class="text-2xl font-black text-emerald-400 tabular-nums">0</span>
+        </div>
+        <div id="timer-container"><span id="timer" class="text-6xl font-black tabular-nums text-amber-500">10</span></div>
+        <div class="bg-slate-900 px-4 py-2 rounded-lg border border-slate-800 text-right">
+            <span class="text-[10px] text-slate-500 block font-bold">STREAK</span>
+            <span id="streak" class="text-2xl font-black text-white">0</span>
         </div>
     </div>
-   </div>
 
-   <div id="game-screen" class="hidden h-full flex flex-col pt-4">
-    <div class="w-full bg-slate-800 h-1.5 rounded-full mb-6 overflow-hidden">
-     <div id="progress-bar" class="progress-fill h-full bg-gradient-to-r from-amber-600 to-amber-400 w-0"></div>
-    </div>
-    <div class="flex justify-between items-end mb-6 px-2">
-     <div class="text-left"><p class="text-[10px] uppercase text-slate-500 font-black tracking-tighter">Sample ID</p><p id="question-num" class="text-2xl font-bold text-white">1/10</p></div>
-     <div class="text-center"><p id="timer" class="text-6xl font-black text-amber-400 tabular-nums drop-shadow-lg">10</p></div>
-     <div class="text-right"><p class="text-[10px] uppercase text-slate-500 font-black tracking-tighter">Accuracy Score</p><p id="score" class="text-2xl font-bold text-emerald-400 tabular-nums">0</p></div>
-    </div>
-
-    <div id="game-card" class="bg-slate-800/80 backdrop-blur-xl p-6 rounded-[2.5rem] border border-slate-700 shadow-2xl flex-1 flex flex-col relative overflow-hidden">
-     <canvas id="visualizer" class="mb-4"></canvas>
-     <div class="flex justify-center mb-8"><div id="sample-tube" class="w-16 h-32 sample-tube" style="--sample-color: #fef08a;"></div></div>
-     <h2 id="question" class="text-xl text-white text-center mb-8 font-medium min-h-[60px] leading-relaxed">System calibrating...</h2>
-     <div id="options" class="grid grid-cols-1 gap-3 flex-1"></div>
-     <div id="feedback" class="mt-4 text-center text-xl font-bold h-12 flex items-center justify-center"></div>
+    <div id="game-card" class="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex-1 flex flex-col shadow-2xl">
+        <canvas id="visualizer" class="w-full h-12 mb-4 opacity-30"></canvas>
+        <div class="flex justify-center mb-6"><div id="sample-tube" class="w-14 h-28 sample-tube"></div></div>
+        <h2 id="question" class="text-center text-lg font-bold mb-6 text-slate-200 min-h-[50px]"></h2>
+        <div id="options" class="grid grid-cols-1 gap-3"></div>
+        <div id="feedback" class="h-12 flex items-center justify-center mt-4 font-black text-xl uppercase italic"></div>
     </div>
    </div>
 
-   <div id="gameover-screen" class="hidden h-full flex flex-col items-center justify-center text-center">
-    <div class="mb-6 text-6xl">📊</div>
-    <h2 class="text-4xl font-bold text-amber-400 mb-2">Shift Concluded</h2>
-    <div class="bg-slate-800/80 backdrop-blur-md p-10 rounded-[3rem] mb-10 border border-slate-700 shadow-2xl w-full max-w-sm">
-     <p class="text-slate-400 uppercase tracking-[0.3em] text-xs mb-4 font-bold">Final Proficiency</p>
-     <p class="text-8xl font-black text-white" id="final-score">0</p>
+   <div id="gameover-screen" class="hidden h-full flex flex-col items-center justify-center">
+    <h2 class="text-3xl font-black text-amber-500 mb-2 italic">SHIFT COMPLETE</h2>
+    <div class="bg-slate-900 p-8 rounded-3xl border-2 border-amber-500/20 mb-8 w-full text-center">
+        <p class="text-slate-500 font-bold uppercase text-xs mb-2 tracking-widest">Final Proficiency</p>
+        <p id="final-score" class="text-8xl font-black text-white">0</p>
     </div>
-    <div class="flex flex-col gap-4 w-full max-w-xs">
-        <button onclick="shareScore()" class="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2"> 📤 SHARE RESULTS </button>
-        <button onclick="startGame()" class="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl rounded-2xl shadow-lg transition-all"> START NEW SHIFT </button> 
-        <button onclick="goHome()" class="px-10 py-4 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold rounded-2xl transition-all"> RETURN TO HUB </button>
-    </div>
+    <button onclick="startGame()" class="w-full py-4 bg-amber-500 text-slate-950 font-black text-xl rounded-xl mb-3">NEW ROTATION</button>
+    <button onclick="location.reload()" class="w-full py-4 bg-slate-800 text-white font-black text-xl rounded-xl">EXIT HUB</button>
    </div>
   </div>
 
   <script>
-    // --- AUDIO & VISUAL CORE ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser();
-    const masterGainNode = audioCtx.createGain();
-    analyser.fftSize = 128;
-    analyser.connect(masterGainNode);
-    masterGainNode.connect(audioCtx.destination);
+    let audioCtx, analyser, currentScore = 0, timeLeft = 10, currentQuestion = 0, questions = [], timerInterval, streak = 0;
 
-    let ambientNodes = [], visualizerFrame, currentScore = 0, timeLeft = 10, currentQuestion = 0, timerInterval = null, questions = [], isSaving = false;
-
-    // --- CLOUD DATA LOGIC ---
-    async function init() {
-        if (window.dataSdk) {
-            await window.dataSdk.init({
-                onDataChanged: (data) => {
-                    const listEl = document.getElementById('history-list');
-                    if (!data || data.length === 0) return;
-                    const sorted = [...data].sort((a, b) => new Date(b.played_at) - new Date(a.played_at)).slice(0, 10);
-                    listEl.innerHTML = sorted.map(item => `
-                        <div class="flex justify-between items-center bg-slate-700/20 p-3 rounded-2xl border border-slate-600/30">
-                            <div class="text-left">
-                                <p class="text-white text-xs font-bold leading-tight">${item.player_name || 'Guest Analyst'}</p>
-                                <p class="text-[9px] text-slate-500 uppercase font-bold tracking-widest">${new Date(item.played_at).toLocaleDateString()}</p>
-                            </div>
-                            <span class="text-amber-400 font-black text-lg">${item.score}</span>
-                        </div>
-                    `).join('');
-                }
-            });
-        }
+    function initAudio() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        analyser.connect(audioCtx.destination);
     }
 
-    const Sound = {
-        startAmbient: () => {
-            if (ambientNodes.length > 0) return;
-            masterGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-            masterGainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1.5);
-            const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 350;
-            [55, 110].forEach(f => {
-                const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                osc.type = 'triangle'; osc.frequency.value = f; g.gain.value = 0.08;
-                osc.connect(g); g.connect(filter); osc.start(); ambientNodes.push(osc);
-            });
-            filter.connect(analyser); ambientNodes.push(filter); drawVisualizer();
-        },
-        stopAmbient: () => {
-            masterGainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1);
-            setTimeout(() => { ambientNodes.forEach(n => { try { n.stop(); } catch(e) {} }); ambientNodes = []; cancelAnimationFrame(visualizerFrame); }, 1100);
-        },
-        playTick: (t) => {
-            const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            osc.frequency.value = t <= 3 ? 800 : 400; g.gain.setValueAtTime(0.04, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-            osc.connect(g); g.connect(analyser); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-        },
-        playSuccess: () => {
-            [523, 659, 783, 1046].forEach((f, i) => {
-                const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                osc.frequency.setValueAtTime(f, audioCtx.currentTime + (i * 0.08));
-                g.gain.setValueAtTime(0.06, audioCtx.currentTime + (i * 0.08));
-                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (i * 0.08) + 0.3);
-                osc.connect(g); g.connect(analyser); osc.start(audioCtx.currentTime + (i * 0.08)); osc.stop(audioCtx.currentTime + (i * 0.08) + 0.3);
-            });
-        },
-        playError: () => {
-            const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            osc.type = 'sawtooth'; osc.frequency.value = 90; g.gain.setValueAtTime(0.12, audioCtx.currentTime);
-            g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
-            osc.connect(g); g.connect(analyser); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    const SFX = {
+        play: (f, type = 'sine', d = 0.1, v = 0.05) => {
+            if(!audioCtx) return;
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type = type; o.frequency.setValueAtTime(f, audioCtx.currentTime);
+            g.gain.setValueAtTime(v, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
+            o.connect(g); g.connect(analyser); o.start(); o.stop(audioCtx.currentTime + d);
         }
     };
 
-    function drawVisualizer() {
-        const canvas = document.getElementById('visualizer'); const ctx = canvas.getContext('2d');
-        const bufferLength = analyser.frequencyBinCount; const dataArray = new Uint8Array(bufferLength);
-        function render() {
-            visualizerFrame = requestAnimationFrame(render); analyser.getByteTimeDomainData(dataArray);
-            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.lineWidth = 3; ctx.strokeStyle = '#fbbf24';
-            ctx.beginPath(); const sliceWidth = canvas.width / bufferLength; let x = 0;
-            for(let i = 0; i < bufferLength; i++) {
-                const v = dataArray[i] / 128.0; const y = v * canvas.height / 2;
-                if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                x += sliceWidth;
-            }
-            ctx.lineTo(canvas.width, canvas.height / 2); ctx.stroke();
-        }
-        render();
-    }
-
-    const questionBank = [
-      { color: '#fef9c3', question: 'Pale yellow/straw color indicates?', options: ['Normal hydration', 'Dehydration', 'Blood in urine', 'Liver disease'], correct: 0 },
-      { color: '#fbbf24', question: 'This dark yellow/amber color suggests:', options: ['Normal hydration', 'Concentrated urine/Dehydration', 'Infection', 'Kidney failure'], correct: 1 },
-      { color: '#f87171', question: 'A reddish/pink urine sample may indicate:', options: ['Normal finding', 'Hematuria (blood in urine)', 'Good hydration', 'High protein'], correct: 1 },
-      { color: '#a3e635', question: 'Bright/fluorescent yellow urine is often caused by:', options: ['Kidney disease', 'B vitamins or Riboflavin', 'Diabetes', 'Infection'], correct: 1 },
-      { color: '#78350f', question: 'Dark brown/tea-colored urine could indicate:', options: ['Normal hydration', 'Liver or kidney disorder', 'Excessive water', 'High calcium'], correct: 1 },
-      { color: '#22c55e', question: 'Green-tinged urine might be caused by:', options: ['Certain medications/dyes', 'Normal variation', 'Dehydration', 'High protein'], correct: 0 },
-      { color: '#f97316', question: 'Orange-colored urine can result from:', options: ['Good hydration', 'Medications or Dehydration', 'High sugar', 'Low sodium'], correct: 1 },
-      { color: '#ffffff', question: 'Cloudy/Turbid urine typically suggests:', options: ['Normal finding', 'UTI or Inflammation', 'Excellent hydration', 'High sugar'], correct: 1 },
-      { color: '#fef3c7', question: 'Presence of glucose in urine may suggest:', options: ['Normal finding', 'Diabetes mellitus', 'Dehydration', 'UTI'], correct: 1 },
-      { color: '#e9d5ff', question: 'Persistent foamy urine often indicates:', options: ['Proteinuria (Kidney issues)', 'Good hydration', 'Vitamin deficiency', 'Low BP'], correct: 0 }
+    const bank = [
+        { c: '#fef9c3', q: 'Pale straw color?', o: ['Hydrated', 'Dehydrated', 'Blood', 'Liver'], a: 0 },
+        { c: '#fbbf24', q: 'Amber/Dark Yellow?', o: ['Hydrated', 'Dehydrated', 'Infection', 'Medication'], a: 1 },
+        { c: '#f87171', q: 'Red/Pink tint?', o: ['Normal', 'Hematuria', 'Sugar', 'Protein'], a: 1 },
+        { c: '#a3e635', q: 'Neon Yellow?', o: ['Liver', 'B-Vitamins', 'Diabetes', 'UTI'], a: 1 },
+        { c: '#78350f', q: 'Brown/Tea color?', o: ['Normal', 'Bile/Rhabdo', 'Vitamins', 'Sugar'], a: 1 },
+        { c: '#ffffff', q: 'Cloudy/Milky?', o: ['Hydrated', 'UTI/Pus', 'Sugar', 'Normal'], a: 1 }
     ];
 
-    function showScreen(id) {
-      ['home-screen', 'game-screen', 'gameover-screen'].forEach(s => document.getElementById(s).classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
+    async function fetchPlayers() {
+        if (!window.dataSdk) return;
+        const records = await window.dataSdk.list();
+        const top = records.sort((a, b) => b.score - a.score).slice(0, 5);
+        document.getElementById('player-list').innerHTML = top.map((p, i) => `
+            <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                <span class="font-bold text-slate-300">#${i+1} ${p.player_name || 'ANON'}</span>
+                <span class="text-amber-500 font-black">${p.score}</span>
+            </div>`).join('') || '<p class="text-slate-600 italic">No records yet.</p>';
     }
 
-    function goHome() { Sound.stopAmbient(); showScreen('home-screen'); }
-
     function startGame() {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      Sound.startAmbient();
-      currentScore = 0; currentQuestion = 0; isSaving = false;
-      questions = [...questionBank].sort(() => Math.random() - 0.5).slice(0, 10);
-      document.getElementById('score').textContent = '0';
-      showScreen('game-screen'); loadQuestion();
+        initAudio(); if (audioCtx.state === 'suspended') audioCtx.resume();
+        currentScore = 0; streak = 0; currentQuestion = 0;
+        questions = [...bank].sort(() => Math.random() - 0.5).slice(0, 10);
+        show('game-screen'); loadQuestion();
     }
 
     function loadQuestion() {
-      if (currentQuestion >= 10) return endGame();
-      timeLeft = 10; document.getElementById('timer').textContent = '10';
-      document.getElementById('progress-bar').style.width = (currentQuestion * 10) + '%';
-      document.getElementById('question-num').textContent = `${currentQuestion + 1}/10`;
-      const q = questions[currentQuestion];
-      document.getElementById('sample-tube').style.setProperty('--sample-color', q.color);
-      document.getElementById('question').textContent = q.question;
-      document.getElementById('feedback').textContent = '';
-      document.getElementById('options').innerHTML = q.options.map((opt, idx) => `
-        <button onclick="checkAnswer(${idx})" class="option-btn group flex justify-between items-center p-4 bg-slate-700/50 text-white rounded-2xl border-2 border-slate-600/50 text-left transition-all hover:border-amber-400/50 hover:bg-slate-700 font-medium text-sm">
-          <span>${String.fromCharCode(65 + idx)}. ${opt}</span>
-          <span class="opacity-0 group-hover:opacity-100 transition-opacity text-amber-500">▶</span>
-        </button>`).join('');
-      startTimer();
+        if (currentQuestion >= questions.length) return endGame();
+        timeLeft = 10;
+        const q = questions[currentQuestion];
+        document.getElementById('question-num').textContent = `${currentQuestion + 1}/10`;
+        document.getElementById('score').textContent = currentScore;
+        document.getElementById('streak').textContent = streak;
+        document.getElementById('sample-tube').style.setProperty('--sample-color', q.c);
+        document.getElementById('question').textContent = q.q;
+        document.getElementById('feedback').textContent = '';
+        
+        const multTag = document.getElementById('multiplier-tag');
+        if(streak >= 2) { multTag.textContent = `X${Math.min(streak, 4)}`; multTag.classList.remove('hidden'); multTag.classList.add('multiplier-pop'); }
+        else { multTag.classList.add('hidden'); }
+
+        document.getElementById('options').innerHTML = q.o.map((opt, i) => `
+            <button onclick="check(${i})" class="w-full p-4 bg-slate-800 border-2 border-slate-700 rounded-xl font-bold hover:bg-slate-700 transition-all text-sm uppercase">
+                ${opt}
+            </button>`).join('');
+        startTimer();
     }
 
     function startTimer() {
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        timeLeft--; document.getElementById('timer').textContent = timeLeft; Sound.playTick(timeLeft);
-        if (timeLeft <= 3) document.getElementById('timer').classList.add('text-red-500', 'animate-pulse');
-        else document.getElementById('timer').classList.remove('text-red-500', 'animate-pulse');
-        if (timeLeft <= 0) { Sound.playError(); nextQuestion(); }
-      }, 1000);
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft--; document.getElementById('timer').textContent = timeLeft;
+            SFX.play(timeLeft <= 3 ? 800 : 400, 'sine', 0.05, 0.02);
+            if (timeLeft <= 3) document.getElementById('timer').classList.add('pulse-red');
+            else document.getElementById('timer').classList.remove('pulse-red');
+            if (timeLeft <= 0) { streak = 0; SFX.play(100, 'sawtooth', 0.3); next(); }
+        }, 1000);
     }
 
-    function checkAnswer(idx) {
-      clearInterval(timerInterval);
-      const isCorrect = idx === questions[currentQuestion].correct;
-      const points = isCorrect ? (timeLeft >= 7 ? 20 : 10) : 0;
-      currentScore += points; document.getElementById('score').textContent = currentScore;
-      if (isCorrect) { 
-          Sound.playSuccess(); 
-          document.getElementById('feedback').innerHTML = `<span class="text-emerald-400 combo-bounce block">${timeLeft >= 7 ? '⚡ BLITZ COMBO +20' : 'ACCURATE ANALYSIS +10'}</span>`; 
-      }
-      else { 
-          Sound.playError(); 
-          document.getElementById('feedback').innerHTML = `<span class="text-red-500">CONTAMINATED RESULT</span>`; 
-          document.getElementById('game-card').classList.add('shake-animation'); 
-          setTimeout(() => document.getElementById('game-card').classList.remove('shake-animation'), 300); 
-      }
-      document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
-      setTimeout(nextQuestion, 1400);
+    function check(i) {
+        clearInterval(timerInterval);
+        const correct = i === questions[currentQuestion].a;
+        const feedback = document.getElementById('feedback');
+        
+        if (correct) {
+            streak++;
+            const multiplier = Math.min(streak, 4);
+            const speedBonus = timeLeft > 7 ? 2 : 1;
+            const points = (timeLeft * 10) * multiplier * speedBonus;
+            currentScore += points;
+            
+            SFX.play(600 + (streak * 100));
+            feedback.textContent = speedBonus > 1 ? `⚡ BLITZ X${multiplier * 2}` : `✅ STREAK X${multiplier}`;
+            feedback.className = 'text-emerald-400 italic font-black text-2xl multiplier-pop mt-4';
+        } else {
+            streak = 0;
+            SFX.play(150, 'sawtooth', 0.4);
+            document.getElementById('game-card').classList.add('shake-animation');
+            feedback.textContent = '❌ ERROR - STREAK RESET';
+            feedback.className = 'text-red-500 font-black text-xl mt-4';
+            setTimeout(() => document.getElementById('game-card').classList.remove('shake-animation'), 400);
+        }
+        setTimeout(next, 1200);
     }
 
-    function nextQuestion() { currentQuestion++; loadQuestion(); }
+    function next() { currentQuestion++; loadQuestion(); }
+    function show(id) { ['home-screen', 'game-screen', 'gameover-screen'].forEach(s => document.getElementById(s).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
 
     async function endGame() {
-      if (isSaving) return; isSaving = true;
-      document.getElementById('final-score').textContent = currentScore;
-      showScreen('gameover-screen');
-      const name = document.getElementById('player-name').value.trim() || 'Intern';
-      if (window.dataSdk) {
-        await window.dataSdk.create({ player_name: name, score: currentScore, played_at: new Date().toISOString() });
-      }
+        show('gameover-screen');
+        document.getElementById('final-score').textContent = currentScore;
+        const name = document.getElementById('player-name').value || 'ANALYST';
+        if (window.dataSdk) await window.dataSdk.create({ player_name: name, score: currentScore });
     }
 
-    async function shareScore() {
-        const text = `🧪 Lab Results: ${currentScore} points in Urinalysis Blitz! Can you beat my diagnostic accuracy?`;
-        if (navigator.share) { try { await navigator.share({ title: 'Urinalysis Blitz', text: text, url: window.location.href }); } catch (err) {} }
-        else { await navigator.clipboard.writeText(text); alert('Results copied to clipboard!'); }
+    function draw() {
+        requestAnimationFrame(draw); if (!analyser) return;
+        const data = new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
+        const ctx = document.getElementById('visualizer').getContext('2d');
+        ctx.clearRect(0, 0, 300, 150); ctx.fillStyle = '#fbbf24';
+        data.forEach((v, i) => ctx.fillRect(i * 10, 50 - (v/5), 8, v/5));
     }
-
-    init();
+    draw(); fetchPlayers();
   </script>
  </body>
 </html>
