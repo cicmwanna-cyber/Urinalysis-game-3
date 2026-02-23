@@ -10,8 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
     * { font-family: 'Fredoka', sans-serif; transition: all 0.2s ease; }
-    html, body { height: 100%; width: 100%; margin: 0; padding: 0; }
-    body { background: #0f172a; color: #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    body { background: #0f172a; color: #e2e8f0; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
     
     .sample-tube {
       background: linear-gradient(180deg, rgba(255,255,255,0.1) 20%, var(--sample-color) 20%);
@@ -24,116 +23,89 @@
       background: rgba(255,255,255,0.2); border-radius: 40%; animation: wave 3s infinite linear;
     }
     @keyframes wave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-    .shake-animation { animation: shake 0.3s ease-in-out; }
     
-    .combo-bounce { animation: bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); color: #fbbf24; }
-    @keyframes bounce { 0% { transform: scale(0.5); } 100% { transform: scale(1.1); } }
+    .shake-animation { animation: shake 0.3s ease-in-out; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
     
     .progress-fill { transition: width 0.5s ease-in-out; }
+    .combo-bounce { animation: bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes bounce { 0% { transform: scale(0.5); } 100% { transform: scale(1.1); } }
   </style>
  </head>
  <body>
   <div id="app" class="w-full max-w-xl p-4 h-full">
+   
    <div id="home-screen" class="text-center h-full flex flex-col items-center justify-center">
     <div class="text-7xl mb-6">🧪</div>
     <h1 id="game-title" class="text-5xl font-bold text-amber-400 mb-4">Urinalysis Blitz</h1>
     
-    <div id="global-stats" class="mb-6 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 inline-flex items-center gap-3">
+    <div class="mb-6 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 inline-flex items-center gap-3">
         <span class="text-slate-400 text-sm font-medium uppercase tracking-wider">Global Avg:</span>
-        <span id="avg-score-display" class="text-amber-400 font-bold">--</span>
+        <span id="avg-score-display" class="text-amber-400 font-bold text-lg">0</span>
     </div>
 
-    <p class="text-slate-400 mb-8 text-lg">Analyze 10 specimens. You have 10s per case.<br>
-      Fast answers earn <span class="text-amber-400 font-bold">2x Blitz Combos!</span></p>
+    <p class="text-slate-400 mb-8 text-lg px-4">Identify the urine specimens correctly. <br> Fast answers earn <span class="text-amber-400 font-bold">Blitz Combos!</span></p>
     
-    <input type="text" id="player-name" maxlength="15" placeholder="Enter your name..." class="w-full max-w-xs px-4 py-3 rounded-xl bg-slate-700 border-2 border-slate-600 text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none mb-4"> 
+    <input type="text" id="player-name" maxlength="15" placeholder="Enter your name..." class="w-full max-w-xs px-4 py-4 rounded-2xl bg-slate-700 border-2 border-slate-600 text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none mb-4 text-center text-xl font-medium"> 
     
-    <button id="start-btn" onclick="startGame()" class="px-12 py-5 bg-amber-500 hover:bg-amber-400 text-indigo-950 font-bold text-2xl rounded-2xl shadow-2xl transform hover:scale-105 transition-all"> START SHIFT </button> 
-    <button onclick="showScoreboard()" class="mt-6 px-8 py-3 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold rounded-xl transition-all"> 🏆 Leaderboard </button>
+    <button onclick="startGame()" class="px-12 py-5 bg-amber-500 hover:bg-amber-400 text-indigo-950 font-bold text-2xl rounded-2xl shadow-2xl transform hover:scale-105 transition-all w-full max-w-xs uppercase"> Start Shift </button> 
+    <button onclick="showScoreboard()" class="mt-4 px-8 py-3 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold rounded-xl transition-all w-full max-w-xs uppercase"> 🏆 Leaderboard </button>
    </div>
 
-   <div id="game-screen" class="hidden h-full flex flex-col">
+   <div id="game-screen" class="hidden h-full flex flex-col pt-4">
     <div class="w-full bg-slate-800 h-2 rounded-full mb-6 overflow-hidden border border-slate-700">
      <div id="progress-bar" class="progress-fill h-full bg-amber-500 w-0"></div>
     </div>
     <div class="flex justify-between items-end mb-6">
-     <div>
-      <p class="text-xs uppercase text-slate-500 tracking-widest font-bold">Case Progress</p>
-      <p class="text-2xl font-bold text-white"><span id="question-num">1</span><span class="text-slate-500">/10</span></p>
+     <div class="text-left">
+        <p class="text-xs uppercase text-slate-500 font-bold tracking-widest">Case</p>
+        <p id="question-num" class="text-2xl font-bold text-white">1/10</p>
      </div>
      <div class="text-center">
-      <p id="timer" class="text-5xl font-black text-amber-400 tabular-nums">10</p>
+        <p id="timer" class="text-5xl font-black text-amber-400 tabular-nums">10</p>
      </div>
      <div class="text-right">
-      <p class="text-xs uppercase text-slate-500 tracking-widest font-bold">Score</p>
-      <p id="score" class="text-2xl font-bold text-emerald-400 tabular-nums">0</p>
+        <p class="text-xs uppercase text-slate-500 font-bold tracking-widest">Score</p>
+        <p id="score" class="text-2xl font-bold text-emerald-400 tabular-nums">0</p>
      </div>
     </div>
-    <div id="game-card" class="bg-slate-800/80 backdrop-blur-md p-8 rounded-3xl border border-slate-700 shadow-2xl flex-1 flex flex-col">
+    <div id="game-card" class="bg-slate-800/80 backdrop-blur-md p-8 rounded-3xl border border-slate-700 shadow-2xl flex-1 flex flex-col justify-center">
      <div class="flex justify-center mb-8">
-      <div id="sample-tube" class="w-20 h-36 sample-tube" style="--sample-color: #fef08a;"></div>
+        <div id="sample-tube" class="w-20 h-36 sample-tube" style="--sample-color: #fef08a;"></div>
      </div>
      <h2 id="question" class="text-xl text-white text-center mb-8 font-medium min-h-[60px] leading-tight">Analyzing specimen...</h2>
-     <div id="options" class="grid grid-cols-1 gap-3 flex-1"></div>
+     <div id="options" class="grid grid-cols-1 gap-3"></div>
      <div id="feedback" class="mt-6 text-center text-xl font-bold h-10"></div>
     </div>
    </div>
 
    <div id="gameover-screen" class="hidden h-full flex flex-col items-center justify-center text-center">
     <h2 class="text-5xl font-bold text-amber-400 mb-4">Shift Complete!</h2>
-    <div class="bg-slate-800 p-8 rounded-3xl mb-8 border border-slate-700 shadow-xl">
-     <p class="text-slate-400 uppercase tracking-widest mb-2 font-bold">Final Performance Rating</p>
+    <div class="bg-slate-800 p-8 rounded-3xl mb-8 border border-slate-700 shadow-xl w-full">
+     <p class="text-slate-400 uppercase tracking-widest mb-2 font-bold">Final Score</p>
      <p class="text-7xl font-black text-white" id="final-score">0</p>
     </div>
-    <p id="player-result" class="text-slate-400 mb-6 text-lg"></p>
-    <div class="flex gap-4">
-        <button onclick="startGame()" class="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl rounded-2xl shadow-xl transition-all hover:scale-105"> NEW ROTATION </button> 
-        <button onclick="goHome()" class="px-10 py-4 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold rounded-2xl transition-all"> HOME </button>
+    <div class="flex flex-col gap-3 w-full max-w-xs">
+        <button id="share-btn" onclick="shareScore()" class="px-10 py-4 bg-emerald-600 text-white font-bold text-xl rounded-2xl shadow-xl transition-all hover:scale-105 flex items-center justify-center gap-2"> 📤 SHARE SCORE </button>
+        <button onclick="showScoreboard()" class="px-10 py-4 bg-amber-500 text-indigo-950 font-bold text-xl rounded-2xl shadow-xl transition-all hover:scale-105"> 🏆 VIEW RANKING </button>
+        <button onclick="startGame()" class="px-10 py-4 bg-indigo-600 text-white font-bold text-xl rounded-2xl shadow-xl transition-all hover:scale-105"> NEW ROTATION </button> 
+        <button onclick="goHome()" class="px-10 py-4 bg-slate-700 text-amber-400 font-bold rounded-2xl transition-all"> HOME </button>
     </div>
    </div>
 
-   <div id="scoreboard-screen" class="hidden h-full flex flex-col">
+   <div id="scoreboard-screen" class="hidden h-full flex flex-col py-6">
     <div class="flex justify-between items-center mb-6">
      <h2 class="text-3xl font-bold text-amber-400">🏆 Leaderboard</h2>
-     <button onclick="goHome()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"> Home </button>
+     <button onclick="goHome()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"> Back </button>
     </div>
-    <div id="scoreboard-list" class="flex-1 overflow-auto bg-slate-800/50 rounded-2xl p-4 border border-slate-700">
-     <p class="text-slate-400 text-center py-8">Loading scores...</p>
+    <div id="scoreboard-list" class="flex-1 overflow-auto bg-slate-800/50 rounded-2xl p-4 border border-slate-700 space-y-2">
+     <p class="text-slate-400 text-center py-8">Fetching records...</p>
     </div>
    </div>
+
   </div>
 
   <script>
-    const defaultConfig = { game_title: 'Urinalysis Blitz', start_button_text: 'START SHIFT' };
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    const sounds = {
-      tick: (t) => {
-        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        o.frequency.setValueAtTime(150 + (10 - t) * 40, audioCtx.currentTime);
-        g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
-        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.15);
-      },
-      success: (combo) => {
-        const notes = combo ? [880, 1108, 1318, 1760] : [440, 554, 659];
-        notes.forEach((f, i) => {
-          const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-          o.type = 'triangle'; o.frequency.setValueAtTime(f, audioCtx.currentTime + (i * 0.05));
-          g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-          o.connect(g); g.connect(audioCtx.destination); o.start(audioCtx.currentTime + (i * 0.05)); o.stop(audioCtx.currentTime + 0.5);
-        });
-      },
-      error: () => {
-        [100, 115].forEach(f => {
-          const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-          o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime);
-          g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
-          o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.4);
-        });
-      }
-    };
-
     const questionBank = [
       { color: '#fef9c3', question: 'Pale yellow/straw color indicates?', options: ['Normal hydration', 'Dehydration', 'Blood in urine', 'Liver disease'], correct: 0 },
       { color: '#fbbf24', question: 'This dark yellow/amber color suggests:', options: ['Normal hydration', 'Concentrated urine/Dehydration', 'Infection', 'Kidney failure'], correct: 1 },
@@ -147,61 +119,31 @@
       { color: '#e9d5ff', question: 'Persistent foamy urine often indicates:', options: ['Proteinuria (Kidney issues)', 'Good hydration', 'Vitamin deficiency', 'Low BP'], correct: 0 }
     ];
 
-    let currentScore = 0, timeLeft = 10, currentQuestion = 0, timerInterval = null, questions = [], playerName = '', scores = [], isSaving = false;
+    let currentScore = 0, timeLeft = 10, currentQuestion = 0, timerInterval = null, questions = [], scores = [], isSaving = false;
 
     async function initApp() {
-      if (window.elementSdk) {
-        window.elementSdk.init({
-          defaultConfig,
-          onConfigChange: (config) => {
-            document.getElementById('game-title').textContent = config.game_title || defaultConfig.game_title;
-            document.getElementById('start-btn').textContent = config.start_button_text || defaultConfig.start_button_text;
-          }
-        });
-      }
       if (window.dataSdk) {
         await window.dataSdk.init({
           onDataChanged: (data) => {
             scores = data;
-            updateGlobalAvg(); // Recalculate average whenever data changes
+            const sum = scores.reduce((acc, curr) => acc + (curr.score || 0), 0);
+            document.getElementById('avg-score-display').textContent = scores.length ? Math.round(sum / scores.length) : 0;
             renderScoreboard();
           }
         });
       }
     }
 
-    function updateGlobalAvg() {
-        const display = document.getElementById('avg-score-display');
-        if (!scores || scores.length === 0) {
-            display.textContent = "0";
-            return;
-        }
-        const sum = scores.reduce((acc, curr) => acc + (curr.score || 0), 0);
-        const avg = Math.round(sum / scores.length);
-        display.textContent = avg;
+    function showScreen(id) {
+      ['home-screen', 'game-screen', 'gameover-screen', 'scoreboard-screen'].forEach(s => document.getElementById(s).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
     }
 
-    function showScreen(screenId) {
-      ['home-screen', 'game-screen', 'gameover-screen', 'scoreboard-screen'].forEach(id => document.getElementById(id).classList.add('hidden'));
-      document.getElementById(screenId).classList.remove('hidden');
-    }
-
-    function goHome() {
-      clearInterval(timerInterval);
-      showScreen('home-screen');
-    }
-
-    function showScoreboard() {
-      renderScoreboard();
-      showScreen('scoreboard-screen');
-    }
+    function goHome() { showScreen('home-screen'); }
+    function showScoreboard() { showScreen('scoreboard-screen'); renderScoreboard(); }
 
     function startGame() {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      playerName = document.getElementById('player-name').value.trim() || 'Intern';
-      currentScore = 0;
-      currentQuestion = 0;
-      isSaving = false;
+      currentScore = 0; currentQuestion = 0; isSaving = false;
       questions = [...questionBank].sort(() => Math.random() - 0.5).slice(0, 10);
       document.getElementById('score').textContent = '0';
       showScreen('game-screen');
@@ -211,115 +153,102 @@
     function loadQuestion() {
       if (currentQuestion >= 10) return endGame();
       timeLeft = 10;
-      updateTimerUI();
+      document.getElementById('timer').textContent = '10';
       document.getElementById('progress-bar').style.width = (currentQuestion * 10) + '%';
-      startTimer();
+      document.getElementById('question-num').textContent = `${currentQuestion + 1}/10`;
+      
       const q = questions[currentQuestion];
       document.getElementById('sample-tube').style.setProperty('--sample-color', q.color);
       document.getElementById('question').textContent = q.question;
-      document.getElementById('question-num').textContent = currentQuestion + 1;
       document.getElementById('feedback').textContent = '';
+      
       document.getElementById('options').innerHTML = q.options.map((opt, idx) => `
-        <button onclick="checkAnswer(${idx})" class="option-btn p-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl border border-slate-600 text-left transition-all hover:border-amber-500 font-medium">
+        <button onclick="checkAnswer(${idx})" class="option-btn p-4 bg-slate-700 text-white rounded-xl border-2 border-slate-600 text-left transition-all hover:border-amber-400 font-medium">
           ${String.fromCharCode(65 + idx)}. ${opt}
-        </button>
-      `).join('');
+        </button>`).join('');
+      
+      startTimer();
     }
 
     function startTimer() {
       clearInterval(timerInterval);
       timerInterval = setInterval(() => {
         timeLeft--;
-        updateTimerUI();
-        if (timeLeft > 0) sounds.tick(timeLeft);
-        else handleTimeout();
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft <= 3) document.getElementById('timer').classList.add('text-red-500', 'animate-pulse');
+        else document.getElementById('timer').classList.remove('text-red-500', 'animate-pulse');
+        
+        if (timeLeft <= 0) { clearInterval(timerInterval); nextQuestion(); }
       }, 1000);
     }
 
-    function updateTimerUI() {
-      const el = document.getElementById('timer');
-      el.textContent = timeLeft;
-      el.className = timeLeft <= 3 ? 'text-red-500 font-black animate-pulse scale-110 tabular-nums' : 'text-amber-400 font-black tabular-nums';
-    }
-
-    function handleTimeout() {
+    function checkAnswer(idx) {
       clearInterval(timerInterval);
-      sounds.error();
-      document.getElementById('feedback').innerHTML = '<span class="text-red-500">TIME OUT!</span>';
-      nextQuestion();
-    }
-
-    function checkAnswer(selected) {
-      clearInterval(timerInterval);
-      const q = questions[currentQuestion];
-      const isCorrect = selected === q.correct;
-      const isCombo = timeLeft >= 7;
-      const btns = document.querySelectorAll('.option-btn');
-      btns.forEach(b => b.disabled = true);
-
-      if (isCorrect) {
-        currentScore += (isCombo ? 20 : 10);
-        document.getElementById('score').textContent = currentScore;
-        sounds.success(isCombo);
-        document.getElementById('feedback').innerHTML = isCombo ? '<span class="combo-bounce block text-2xl">⚡ BLITZ COMBO +20</span>' : '<span class="text-emerald-400">CORRECT ANALYSIS +10</span>';
-        btns[selected].classList.add('bg-emerald-600', 'border-emerald-400');
-      } else {
-        sounds.error();
-        document.getElementById('game-card').classList.add('shake-animation');
-        setTimeout(() => document.getElementById('game-card').classList.remove('shake-animation'), 300);
-        document.getElementById('feedback').innerHTML = '<span class="text-red-500">DIAGNOSTIC ERROR</span>';
-        btns[selected].classList.add('bg-red-600', 'border-red-400');
-        btns[q.correct].classList.add('bg-emerald-600/50', 'border-emerald-400');
+      const isCorrect = idx === questions[currentQuestion].correct;
+      const points = isCorrect ? (timeLeft >= 7 ? 20 : 10) : 0;
+      currentScore += points;
+      
+      document.getElementById('score').textContent = currentScore;
+      document.getElementById('feedback').innerHTML = isCorrect 
+        ? `<span class="text-emerald-400 combo-bounce block">${timeLeft >= 7 ? '⚡ BLITZ COMBO +20' : 'CORRECT! +10'}</span>` 
+        : `<span class="text-red-500">DIAGNOSTIC ERROR!</span>`;
+      
+      if (!isCorrect) {
+          document.getElementById('game-card').classList.add('shake-animation');
+          setTimeout(() => document.getElementById('game-card').classList.remove('shake-animation'), 300);
       }
-      nextQuestion();
+
+      document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+      setTimeout(nextQuestion, 1500);
     }
 
-    function nextQuestion() {
-      setTimeout(() => {
-        currentQuestion++;
-        loadQuestion();
-      }, 1500);
-    }
+    function nextQuestion() { currentQuestion++; loadQuestion(); }
 
     async function endGame() {
-      if (isSaving) return;
-      isSaving = true;
-      
-      document.getElementById('progress-bar').style.width = '100%';
+      if (isSaving) return; isSaving = true;
       document.getElementById('final-score').textContent = currentScore;
-      document.getElementById('player-result').textContent = `Great job, ${playerName}! Your shift is complete.`;
       showScreen('gameover-screen');
 
+      const name = document.getElementById('player-name').value.trim() || 'Intern';
       if (window.dataSdk) {
-        await window.dataSdk.create({
-          player_name: playerName,
-          score: currentScore,
-          played_at: new Date().toISOString()
+        await window.dataSdk.create({ 
+            player_name: name, 
+            score: currentScore, 
+            played_at: new Date().toISOString() 
         });
       }
+    }
+
+    async function shareScore() {
+        const name = document.getElementById('player-name').value.trim() || 'Intern';
+        const text = `🧪 I just completed my lab shift in Urinalysis Blitz!\n\nName: ${name}\nScore: ${currentScore} points\n\nCan you beat my diagnostic accuracy?`;
+        
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Urinalysis Blitz', text: text, url: window.location.href });
+            } catch (err) { console.log('Share failed', err); }
+        } else {
+            await navigator.clipboard.writeText(text);
+            alert('Score copied to clipboard!');
+        }
     }
 
     function renderScoreboard() {
       const listEl = document.getElementById('scoreboard-list');
       if (!scores || scores.length === 0) {
-        listEl.innerHTML = '<p class="text-slate-400 text-center py-8">No scores yet. Be the first to play!</p>';
+        listEl.innerHTML = '<p class="text-slate-400 text-center py-8">No records in database yet.</p>';
         return;
       }
-      
-      const sortedScores = [...scores].sort((a, b) => b.score - a.score);
-
-      listEl.innerHTML = sortedScores.slice(0, 10).map((s, idx) => {
-        const medal = idx < 3 ? ['🥇', '🥈', '🥉'][idx] : `#${idx + 1}`;
-        return `
-          <div class="flex items-center justify-between p-3 rounded-xl mb-2 ${idx < 3 ? 'bg-amber-500/20 border border-amber-500/30' : 'bg-slate-700/50'}">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl w-10 text-center">${medal}</span>
-              <span class="text-white font-medium">${s.player_name}</span>
-            </div>
-            <span class="text-amber-400 font-bold">${s.score}</span>
+      const sorted = [...scores].sort((a, b) => b.score - a.score).slice(0, 10);
+      listEl.innerHTML = sorted.map((s, i) => `
+        <div class="flex items-center justify-between p-4 rounded-2xl ${i < 3 ? 'bg-amber-500/20 border border-amber-500/30' : 'bg-slate-800/50'}">
+          <div class="flex items-center gap-4">
+            <span class="text-2xl w-8 text-center">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
+            <span class="text-white font-bold">${s.player_name}</span>
           </div>
-        `;
-      }).join('');
+          <span class="text-amber-400 font-black text-xl">${s.score}</span>
+        </div>
+      `).join('');
     }
 
     initApp();
