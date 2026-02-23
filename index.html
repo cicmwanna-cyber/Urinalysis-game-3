@@ -1,237 +1,201 @@
-<!doctype html>
-<html lang="en" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Urinalysis Blitz | High-Stakes Lab</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="/_sdk/element_sdk.js"></script>
-  <script src="/_sdk/data_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-  <style>
-    * { font-family: 'Fredoka', sans-serif; transition: all 0.2s ease; }
-    body { background: #020617; color: #e2e8f0; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-    
-    .sample-tube {
-      width: 50px; height: 100px;
-      border-radius: 0 0 25px 25px;
-      position: relative; overflow: hidden; border: 3px solid rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.1);
-    }
-    
-    .shake-animation { animation: shake 0.4s both; }
-    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-    
-    .multiplier-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-
-    .custom-scroll::-webkit-scrollbar { width: 4px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-  </style>
- </head>
- <body>
-  <div id="app" class="w-full max-w-md p-4 h-full flex flex-col">
-   
-   <div id="home-screen" class="text-center flex-1 flex flex-col justify-center">
-    <div class="text-6xl mb-4">🧪</div>
-    <h1 class="text-4xl font-black text-amber-500 mb-2 italic">URINALYSIS BLITZ</h1>
-    
-    <input type="text" id="player-name" maxlength="12" placeholder="ANALYST NAME..." class="w-full px-4 py-4 rounded-xl bg-slate-900 border-2 border-slate-700 text-white focus:border-amber-500 focus:outline-none mb-4 text-center font-bold"> 
-    
-    <button onclick="startGame()" class="w-full py-5 bg-amber-500 text-slate-950 font-black text-2xl rounded-xl uppercase shadow-xl transition-all mb-8"> Start Shift </button> 
-
-    <div class="bg-slate-900/80 rounded-2xl p-4 border border-slate-800 text-left">
-        <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center">🏆 Leaderboard</h3>
-        <div id="player-list" class="space-y-2 text-sm max-h-40 overflow-y-auto custom-scroll pr-1">
-            <p class="text-slate-700 text-center py-4 italic text-xs">Connecting to Lab Database...</p>
-        </div>
-    </div>
-   </div>
-
-   <div id="game-screen" class="hidden h-full flex flex-col py-4">
-    <div class="flex justify-between items-center mb-6">
-        <div class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800 relative">
-            <span id="multiplier-tag" class="absolute -top-3 -right-3 bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full hidden"></span>
-            <span class="text-[8px] text-slate-500 block font-bold">SCORE</span>
-            <span id="score" class="text-xl font-black text-emerald-400 tabular-nums">0</span>
-        </div>
-        <div id="timer-container"><span id="timer" class="text-5xl font-black tabular-nums text-amber-500">10</span></div>
-        <div class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800 text-right">
-            <span class="text-[8px] text-slate-500 block font-bold">STREAK</span>
-            <span id="streak" class="text-xl font-black text-white">0</span>
-        </div>
-    </div>
-
-    <div id="game-card" class="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex-1 flex flex-col shadow-2xl overflow-hidden">
-        <canvas id="visualizer" class="w-full h-10 mb-2 opacity-40"></canvas>
-        <div class="flex justify-center mb-4">
-            <div id="sample-tube" class="sample-tube"></div>
-        </div>
-        <h2 id="question" class="text-center text-lg font-bold mb-4 text-slate-200 min-h-[50px] leading-tight"></h2>
-        
-        <div id="options" class="grid grid-cols-1 gap-2"></div>
-        
-        <div id="feedback" class="h-10 flex items-center justify-center mt-4 font-black text-lg uppercase italic"></div>
-    </div>
-   </div>
-
-   <div id="gameover-screen" class="hidden h-full flex flex-col items-center justify-center">
-    <h2 class="text-3xl font-black text-amber-500 mb-2 italic">SHIFT COMPLETE</h2>
-    <div class="bg-slate-900 p-8 rounded-3xl border-2 border-amber-500/20 mb-8 w-full text-center">
-        <p class="text-slate-500 font-bold uppercase text-[10px] mb-2 tracking-widest">Final Efficiency</p>
-        <p id="final-score" class="text-7xl font-black text-white">0</p>
-    </div>
-    <button onclick="startGame()" class="w-full py-4 bg-amber-500 text-slate-950 font-black text-xl rounded-xl mb-3">NEW ROTATION</button>
-    <button onclick="location.reload()" class="w-full py-4 bg-slate-800 text-white font-black text-xl rounded-xl">MAIN MENU</button>
-   </div>
-  </div>
-
-  <script>
-    let audioCtx, analyser, currentScore = 0, timeLeft = 10, currentQuestion = 0, questions = [], timerInterval, streak = 0;
-
-    function initAudio() {
-        if (audioCtx) return;
-        try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 64;
-            analyser.connect(audioCtx.destination);
-        } catch(e) { console.log("Audio blocked"); }
-    }
-
-    const SFX = {
-        play: (f, type = 'sine', d = 0.1, v = 0.05) => {
-            if(!audioCtx || audioCtx.state !== 'running') return;
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = type; o.frequency.setValueAtTime(f, audioCtx.currentTime);
-            g.gain.setValueAtTime(v, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
-            o.connect(g); g.connect(analyser); o.start(); o.stop(audioCtx.currentTime + d);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urine Luck: Lab Challenge</title>
+    <style>
+        :root {
+            --neon-yellow: #ccff00;
+            --error-red: #ff4444;
+            --bg-dark: #1a1a1a;
         }
-    };
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #game-container {
+            max-width: 600px;
+            width: 100%;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid var(--neon-yellow);
+            box-shadow: 0 0 20px rgba(204, 255, 0, 0.2);
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: var(--neon-yellow);
+            margin-bottom: 20px;
+        }
+        .lab-results {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--neon-yellow);
+        }
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #444;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 16px;
+        }
+        .option-btn:hover { background: #555; }
+        .correct { background: #2e7d32 !important; animation: shake 0.5s; }
+        .wrong { background: #c62828 !important; animation: shake 0.5s; }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(5px); }
+            50% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
 
-    const bank = [
-        { c: '#fef9c3', q: 'Pale straw color indicates?', o: ['Normal Hydration', 'Dehydration', 'Blood', 'Infection'], a: 0 },
-        { c: '#fbbf24', q: 'Amber/Dark Yellow suggests?', o: ['Clear', 'Concentrated', 'Healthy', 'Medication'], a: 1 },
-        { c: '#f87171', q: 'Red/Pink tint usually is?', o: ['Beets', 'Hematuria', 'Normal', 'Sugar'], a: 1 },
-        { c: '#a3e635', q: 'Neon Yellow is often?', o: ['B-Vitamins', 'Dehydration', 'Diabetes', 'Liver'], a: 0 },
-        { c: '#78350f', q: 'Brown/Tea color could be?', o: ['Bile/Liver', 'Sugar', 'Protein', 'Healthy'], a: 0 },
-        { c: '#ffffff', q: 'Cloudy/Turbid means?', o: ['Clear', 'Bacteria/Pus', 'Good', 'Sugar'], a: 1 },
-        { c: '#4ade80', q: 'Greenish specimen?', o: ['Meds/Dyes', 'High Fiber', 'Healthy', 'Sugar'], a: 0 }
+        #leaderboard {
+            margin-top: 20px;
+            width: 100%;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🧪 URINE LUCK</h1>
+    
+    <div id="game-container">
+        <div id="setup">
+            <input type="text" id="player-name" placeholder="Enter Lab Tech Name..." style="padding:10px; width:80%;">
+            <button class="option-btn" onclick="startGame()" style="background:var(--neon-yellow); color:black; font-weight:bold;">START SHIFT</button>
+        </div>
+
+        <div id="game-play" style="display:none;">
+            <div class="stats-bar">
+                <span>TECH: <span id="display-name"></span></span>
+                <span>SCORE: <span id="score">0</span></span>
+            </div>
+            
+            <div class="lab-results" id="case-data">
+                </div>
+
+            <div id="options">
+                </div>
+        </div>
+    </div>
+
+    <div id="leaderboard">
+        <h3>🏆 Hall of Fame</h3>
+        <ul id="score-list"></ul>
+    </div>
+
+<script>
+    const cases = [
+        {
+            data: "<b>Color:</b> Pale Yellow<br><b>Glucose:</b> +++ High<br><b>Ketones:</b> ++ Moderate<br><b>Note:</b> Fruity odor detected.",
+            options: ["Diabetes Mellitus", "UTI", "Dehydration", "Normal"],
+            answer: 0
+        },
+        {
+            data: "<b>Color:</b> Cloudy Amber<br><b>Leukocytes:</b> Positive<br><b>Nitrites:</b> Positive<br><b>Note:</b> Patient reports burning.",
+            options: ["Kidney Stones", "UTI", "Liver Failure", "Diabetes"],
+            answer: 1
+        },
+        {
+            data: "<b>Color:</b> Dark 'Tea' Color<br><b>Bilirubin:</b> +++ High<br><b>Urobilinogen:</b> Increased",
+            options: ["Healthy", "Over-hydration", "Biliary Obstruction / Liver Issue", "UTI"],
+            answer: 2
+        }
     ];
 
-    async function loadLeaderboard() {
-        if (!window.dataSdk) return;
-        try {
-            const data = await window.dataSdk.list();
-            if (data && data.length > 0) {
-                const sorted = data.sort((a,b) => b.score - a.score).slice(0, 5);
-                document.getElementById('player-list').innerHTML = sorted.map((p, i) => `
-                    <div class="flex justify-between items-center bg-slate-800/40 p-2.5 rounded-lg border border-slate-800/50">
-                        <span class="font-bold text-slate-400">#${i+1} ${p.player_name || 'ANON'}</span>
-                        <span class="text-amber-500 font-black">${p.score}</span>
-                    </div>`).join('');
-            }
-        } catch(e) { console.log("DB silent"); }
+    let score = 0;
+    let playerName = "";
+
+    function playSound(type) {
+        const synth = window.speechSynthesis;
+        if (type === 'correct') {
+            const utterance = new SpeechSynthesisUtterance("Correct! Excellent analysis.");
+            utterance.pitch = 1.5;
+            synth.speak(utterance);
+        } else {
+            const utterance = new SpeechSynthesisUtterance("Error! Contaminated sample!");
+            utterance.pitch = 0.5;
+            synth.speak(utterance);
+        }
     }
 
     function startGame() {
-        initAudio();
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        currentScore = 0; streak = 0; currentQuestion = 0;
-        questions = [...bank].sort(() => Math.random() - 0.5);
-        document.getElementById('home-screen').classList.add('hidden');
-        document.getElementById('game-screen').classList.remove('hidden');
-        document.getElementById('gameover-screen').classList.add('hidden');
-        loadQuestion();
+        playerName = document.getElementById('player-name').value || "Guest Tech";
+        document.getElementById('display-name').innerText = playerName;
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('game-play').style.display = 'block';
+        loadCase();
+        updateLeaderboard();
     }
 
-    function loadQuestion() {
-        if (currentQuestion >= questions.length) return endGame();
-        timeLeft = 10;
-        const q = questions[currentQuestion];
-        
-        document.getElementById('question-num').textContent = `${currentQuestion + 1}/${questions.length}`;
-        document.getElementById('score').textContent = currentScore;
-        document.getElementById('streak').textContent = streak;
-        
-        const tube = document.getElementById('sample-tube');
-        tube.style.background = `linear-gradient(180deg, rgba(255,255,255,0.1) 20%, ${q.c} 20%)`;
-        tube.style.boxShadow = `0 0 25px ${q.c}`;
-        
-        document.getElementById('question').textContent = q.q;
-        document.getElementById('feedback').textContent = '';
-        
-        const multTag = document.getElementById('multiplier-tag');
-        if(streak >= 2) { multTag.textContent = `X${Math.min(streak, 4)}`; multTag.classList.remove('hidden'); }
-        else { multTag.classList.add('hidden'); }
-
-        // RENDER CHOICES
+    function loadCase() {
+        const randomCase = cases[Math.floor(Math.random() * cases.length)];
+        document.getElementById('case-data').innerHTML = randomCase.data;
         const optionsDiv = document.getElementById('options');
-        optionsDiv.innerHTML = ''; // Clear old buttons
-        q.o.forEach((opt, i) => {
+        optionsDiv.innerHTML = '';
+        
+        randomCase.options.forEach((opt, index) => {
             const btn = document.createElement('button');
-            btn.className = "w-full p-4 bg-slate-800 border-2 border-slate-700 rounded-xl font-bold hover:bg-slate-700 hover:border-amber-500 active:scale-95 transition-all text-sm uppercase";
-            btn.innerHTML = opt;
-            btn.onclick = () => check(i);
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index, randomCase.answer, btn);
             optionsDiv.appendChild(btn);
         });
-        
-        startTimer();
     }
 
-    function startTimer() {
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            timeLeft--; 
-            document.getElementById('timer').textContent = timeLeft;
-            SFX.play(timeLeft <= 3 ? 800 : 400, 'sine', 0.05, 0.02);
-            if (timeLeft <= 0) { streak = 0; SFX.play(100, 'sawtooth', 0.3); next(); }
-        }, 1000);
-    }
-
-    function check(i) {
-        clearInterval(timerInterval);
-        const correct = i === questions[currentQuestion].a;
-        const feedback = document.getElementById('feedback');
-        
-        if (correct) {
-            streak++;
-            const multiplier = Math.min(streak, 4);
-            const speedBonus = timeLeft > 7 ? 2 : 1;
-            currentScore += (timeLeft * 10) * multiplier * speedBonus;
-            SFX.play(600 + (streak * 100));
-            feedback.textContent = speedBonus > 1 ? `⚡ BLITZ X${multiplier * 2}` : `✅ STREAK X${multiplier}`;
-            feedback.className = 'text-emerald-400 font-black text-2xl multiplier-pop mt-4';
+    function checkAnswer(selected, correct, btn) {
+        if (selected === correct) {
+            score += 100;
+            btn.classList.add('correct');
+            playSound('correct');
+            document.getElementById('score').innerText = score;
+            saveScore();
+            setTimeout(loadCase, 1500);
         } else {
-            streak = 0;
-            SFX.play(150, 'sawtooth', 0.4);
-            document.getElementById('game-card').classList.add('shake-animation');
-            feedback.textContent = '❌ ERROR';
-            feedback.className = 'text-red-500 font-black text-xl mt-4';
-            setTimeout(() => document.getElementById('game-card').classList.remove('shake-animation'), 400);
+            btn.classList.add('wrong');
+            playSound('wrong');
+            score = Math.max(0, score - 50);
+            document.getElementById('score').innerText = score;
         }
-        setTimeout(next, 1000);
     }
 
-    function next() { currentQuestion++; loadQuestion(); }
-    async function endGame() {
-        document.getElementById('game-screen').classList.add('hidden');
-        document.getElementById('gameover-screen').classList.remove('hidden');
-        document.getElementById('final-score').textContent = currentScore;
-        const name = document.getElementById('player-name').value || 'ANALYST';
-        if (window.dataSdk) await window.dataSdk.create({ player_name: name, score: currentScore });
-        loadLeaderboard();
+    function saveScore() {
+        let scores = JSON.parse(localStorage.getItem('urinalysisScores') || '[]');
+        const userIndex = scores.findIndex(s => s.name === playerName);
+        if (userIndex > -1) {
+            if (score > scores[userIndex].score) scores[userIndex].score = score;
+        } else {
+            scores.push({name: playerName, score: score});
+        }
+        localStorage.setItem('urinalysisScores', JSON.stringify(scores));
+        updateLeaderboard();
     }
 
-    function draw() {
-        requestAnimationFrame(draw); if (!analyser) return;
-        const data = new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
-        const ctx = document.getElementById('visualizer').getContext('2d');
-        ctx.clearRect(0, 0, 300, 150); ctx.fillStyle = '#fbbf24';
-        data.forEach((v, i) => ctx.fillRect(i * 10, 50 - (v/5), 8, v/5));
+    function updateLeaderboard() {
+        let scores = JSON.parse(localStorage.getItem('urinalysisScores') || '[]');
+        scores.sort((a, b) => b.score - a.score);
+        const list = document.getElementById('score-list');
+        list.innerHTML = scores.slice(0, 5).map(s => `<li>${s.name}: ${s.score}</li>`).join('');
     }
-    draw(); loadLeaderboard();
-  </script>
- </body>
+</script>
+</body>
 </html>
